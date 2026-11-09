@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>계산기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #eef2f6; font-family: Arial, sans-serif; }
+    .calculator { width: 340px; padding: 22px; border-radius: 30px; background: #111317; box-shadow: 0 24px 60px #17263a33; }
+    output { display: block; height: 90px; padding: 22px 8px 12px; overflow: hidden; color: white; font-size: 48px; line-height: 1; text-align: right; white-space: nowrap; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    button { height: 64px; border: 0; border-radius: 50%; background: #333438; color: white; font-size: 24px; cursor: pointer; }
+    button:hover { filter: brightness(1.2); }
+    button:active { transform: scale(.94); }
+    .utility { background: #a5a5a5; color: #111; }
+    .operator { background: #ff9f0a; }
+    .zero { grid-column: span 2; border-radius: 999px; text-align: left; padding-left: 25px; }
+  </style>
+</head>
+<body>
+  <main class="calculator">
+    <output id="display">0</output>
+    <section class="keys" id="keys">
+      <button class="utility" data-action="clear">AC</button>
+      <button class="utility" data-action="sign">±</button>
+      <button class="utility" data-action="percent">%</button>
+      <button class="operator" data-value="÷">÷</button>
+      <button data-value="7">7</button><button data-value="8">8</button><button data-value="9">9</button><button class="operator" data-value="×">×</button>
+      <button data-value="4">4</button><button data-value="5">5</button><button data-value="6">6</button><button class="operator" data-value="-">−</button>
+      <button data-value="1">1</button><button data-value="2">2</button><button data-value="3">3</button><button class="operator" data-value="+">+</button>
+      <button class="zero" data-value="0">0</button><button data-value=".">.</button><button class="operator" data-action="equals">=</button>
+    </section>
+  </main>
+  <script>
+    const display = document.querySelector('#display');
+    let expression = '';
+
+    function show(value) {
+      display.textContent = value || '0';
+      display.style.fontSize = value.length > 10 ? '32px' : '48px';
+    }
+
+    document.querySelector('#keys').addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      const value = button.dataset.value;
+      const action = button.dataset.action;
+
+      if (value) {
+        expression += value;
+        show(expression);
+        return;
+      }
+      if (action === 'clear') {
+        expression = '';
+        show('0');
+      }
+      if (action === 'sign' && expression) {
+        expression = expression.startsWith('-') ? expression.slice(1) : `-${expression}`;
+        show(expression);
+      }
+      if (action === 'percent' && expression) {
+        const number = Number(expression);
+        if (Number.isFinite(number)) expression = String(number / 100);
+        show(expression);
+      }
+      if (action === 'equals' && expression) {
+        try {
+          const safe = expression.replaceAll('×', '*').replaceAll('÷', '/');
+          if (!/^[0-9+\-*/.() ]+$/.test(safe)) throw new Error();
+          const result = Function(`"use strict"; return (${safe})`)();
+          if (!Number.isFinite(result)) throw new Error();
+          expression = String(Math.round((result + Number.EPSILON) * 1e10) / 1e10);
+          show(expression);
+        } catch {
+          expression = '';
+          show('오류');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
